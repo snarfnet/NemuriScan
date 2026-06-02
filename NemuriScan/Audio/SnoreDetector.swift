@@ -115,34 +115,33 @@ class SnoreDetector {
 
     private func computeFFTMagnitude(_ samples: [Float]) -> [Float] {
         let n = samples.count
-        var real = samples
-        var imag = [Float](repeating: 0, count: n)
-        var magnitude = [Float](repeating: 0, count: n / 2)
+        let log2n = vDSP_Length(log2(Float(n)))
+        guard let fftSetup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else {
+            return [Float](repeating: 0, count: n / 2)
+        }
+        defer { vDSP_destroy_fftsetup(fftSetup) }
 
-        real.withUnsafeMutableBufferPointer { realPtr in
-            imag.withUnsafeMutableBufferPointer { imagPtr in
-                magnitude.withUnsafeMutableBufferPointer { magPtr in
-                    var splitComplex = DSPSplitComplex(
-                        realp: realPtr.baseAddress!,
-                        imagp: imagPtr.baseAddress!
-                    )
-                    if let setup = vDSPSetup {
-                        vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(n), .FORWARD).map { fwdSetup in
-                            vDSP_DFT_Execute(fwdSetup, &real, &imag, realPtr.baseAddress!, imagPtr.baseAddress!)
-                            vDSP_DFT_DestroySetup(fwdSetup)
-                        }
-                        _ = setup
-                    }
-                    vDSP_zvmags(&splitComplex, 1, magPtr.baseAddress!, 1, vDSP_Length(n / 2))
-                }
+        // Split samples into even/odd for split complex
+        var realp = [Float](repeating: 0, count: n / 2)
+        var imagp = [Float](repeating: 0, count: n / 2)
+        samples.withUnsafeBufferPointer { samplesPtr in
+            var dspInput = DSPSplitComplex(realp: &realp, imagp: &imagp)
+            samplesPtr.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: n / 2) { complexPtr in
+                vDSP_ctoz(complexPtr, 2, &dspInput, 1, vDSP_Length(n / 2))
             }
         }
 
-        // Compute magnitudes via manual sqrt for correctness
+        // Perform FFT
+        var splitComplex = DSPSplitComplex(realp: &realp, imagp: &imagp)
+        vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(kFFTDirection_Forward))
+
+        // Compute magnitudes
+        var magnitudes = [Float](repeating: 0, count: n / 2)
+        vDSP_zvmags(&splitComplex, 1, &magnitudes, 1, vDSP_Length(n / 2))
+
+        // Square root for actual magnitude
         var output = [Float](repeating: 0, count: n / 2)
-        for i in 0..<(n / 2) {
-            output[i] = sqrt(real[i] * real[i] + imag[i] * imag[i])
-        }
+        vvsqrtf(&output, &magnitudes, [Int32(n / 2)])
         return output
     }
 
