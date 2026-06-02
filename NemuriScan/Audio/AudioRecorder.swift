@@ -20,7 +20,7 @@ class AudioRecorder: NSObject, ObservableObject {
     private let bufferSize: AVAudioFrameCount = 4096
 
     func requestPermission(completion: @escaping (Bool) -> Void) {
-        AVAudioApplication.requestRecordPermission { granted in
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
             DispatchQueue.main.async {
                 completion(granted)
             }

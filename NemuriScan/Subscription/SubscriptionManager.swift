@@ -8,7 +8,7 @@ class SubscriptionManager: ObservableObject {
     @Published var errorMessage: String?
 
     private let productID = "com.tokyonasu.nemuriscan.monthly"
-    private var currentTransaction: Transaction?
+    private var currentTransaction: StoreKit.Transaction?
 
     init() {
         Task {
@@ -18,7 +18,7 @@ class SubscriptionManager: ObservableObject {
     }
 
     func checkSubscriptionStatus() async {
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             switch result {
             case .verified(let transaction):
                 if transaction.productID == productID {
@@ -77,7 +77,7 @@ class SubscriptionManager: ObservableObject {
     }
 
     private func listenForTransactions() async {
-        for await result in Transaction.updates {
+        for await result in StoreKit.Transaction.updates {
             switch result {
             case .verified(let transaction):
                 if transaction.productID == productID {

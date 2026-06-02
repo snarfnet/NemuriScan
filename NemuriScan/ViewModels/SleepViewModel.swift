@@ -82,7 +82,7 @@ class SleepViewModel: ObservableObject {
 
     // MARK: - Score Calculation
 
-    private func calculateScore(
+    nonisolated private func calculateScore(
         stages: [SleepStage],
         snores: [SnoreEvent],
         apneas: [ApneaEvent],
