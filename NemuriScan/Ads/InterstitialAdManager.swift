@@ -3,7 +3,7 @@ import UIKit
 
 @MainActor
 class InterstitialAdManager: NSObject, ObservableObject {
-    private let adUnitID = "ca-app-pub-3940256099942544/4411468910"
+    private let adUnitID = "ca-app-pub-9404799280370656/6230632932"
     private var interstitial: GADInterstitialAd?
 
     override init() {

@@ -145,7 +145,7 @@ struct RecordView: View {
                 }
 
                 // Banner Ad
-                BannerAdView(adUnitID: "ca-app-pub-3940256099942544/2435281174")
+                BannerAdView(adUnitID: "ca-app-pub-9404799280370656/1971823720")
                     .frame(height: 50)
                     .background(Color.black.opacity(0.3))
             }

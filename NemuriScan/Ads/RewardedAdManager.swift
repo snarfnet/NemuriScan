@@ -3,7 +3,7 @@ import UIKit
 
 @MainActor
 class RewardedAdManager: NSObject, ObservableObject {
-    private let adUnitID = "ca-app-pub-3940256099942544/1712485313"
+    private let adUnitID = "ca-app-pub-9404799280370656/8660521007"
     private var rewardedAd: GADRewardedAd?
     private var completion: ((Bool) -> Void)?
 

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"python3 -c \\\"\\nimport jwt, time, requests\\nwith open('C:/Users/Windows/asc_key.p8') as f: key = f.read()\\ntoken = jwt.encode({'iss': '2be0734f-943a-4d61-9dc9-5d9045c46fec', 'iat': int(time...",
+  "error": "Exit code 1\nTraceback (most recent call last):\r\n  File \"<string>\", line 15, in <module>\r\n    app_id = b['relationships']['app']['data']['id']\r\n             ~^^^^^^^^^^^^^^^^^\r\nKeyError: 'relationships'\r\n{'name': '�l�����X�L����', 'bundleId': 'com.tokyonasu.nemuriscan'}",
+  "timestamp": "2026-06-02T12:44:55.978Z",
+  "retry_count": 1
+}
