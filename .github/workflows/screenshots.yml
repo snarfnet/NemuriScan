@@ -1,0 +1,76 @@
+name: Take Screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: |
+        XCODE_APP=$(ls /Applications/ | grep -E "^Xcode_2[6-9]|^Xcode_[3-9][0-9]" | sort -V | tail -1)
+        if [ -n "$XCODE_APP" ]; then
+          sudo xcode-select -s "/Applications/$XCODE_APP"
+        else
+          XCODE_APP=$(ls /Applications/ | grep "^Xcode_" | sort -V | tail -1)
+          sudo xcode-select -s "/Applications/$XCODE_APP"
+        fi
+        xcodebuild -version
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode project
+      run: xcodegen generate
+
+    - name: Build for iPhone Simulator
+      run: |
+        xcodebuild build \
+          -scheme NemuriScan \
+          -configuration Debug \
+          -destination "platform=iOS Simulator,name=iPhone 16 Pro Max" \
+          -derivedDataPath build/DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Boot iPhone Simulator
+      run: |
+        UDID=$(xcrun simctl list devices available | grep "iPhone 16 Pro Max" | head -1 | grep -E -o '\([A-F0-9-]{36}\)' | tr -d '()')
+        echo "IPHONE_UDID=$UDID" >> $GITHUB_ENV
+        xcrun simctl boot "$UDID" || true
+        xcrun simctl bootstatus "$UDID" -b
+
+    - name: Screenshot iPhone
+      run: |
+        mkdir -p screenshots
+        APP_PATH=$(find build/DerivedData -name "NemuriScan.app" -type d | head -1)
+        xcrun simctl install "$IPHONE_UDID" "$APP_PATH"
+        xcrun simctl launch "$IPHONE_UDID" com.tokyonasu.nemuriscan
+        sleep 10
+        xcrun simctl io "$IPHONE_UDID" screenshot screenshots/iphone_67.png
+
+    - name: Boot iPad Simulator
+      run: |
+        UDID=$(xcrun simctl list devices available | grep "iPad Pro 13-inch" | head -1 | grep -E -o '\([A-F0-9-]{36}\)' | tr -d '()')
+        echo "IPAD_UDID=$UDID" >> $GITHUB_ENV
+        xcrun simctl boot "$UDID" || true
+        xcrun simctl bootstatus "$UDID" -b
+
+    - name: Screenshot iPad
+      run: |
+        APP_PATH=$(find build/DerivedData -name "NemuriScan.app" -type d | head -1)
+        xcrun simctl install "$IPAD_UDID" "$APP_PATH"
+        xcrun simctl launch "$IPAD_UDID" com.tokyonasu.nemuriscan
+        sleep 10
+        xcrun simctl io "$IPAD_UDID" screenshot screenshots/ipad_129.png
+
+    - name: Upload screenshots
+      uses: actions/upload-artifact@v4
+      with:
+        name: screenshots
+        path: screenshots/
