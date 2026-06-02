@@ -1,0 +1,29 @@
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+DerivedData/
+build/
+
+# SPM
+.build/
+*.resolved
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# CocoaPods
+Pods/
+
+# Credentials
+*.p8
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+
+# Environment
+.env
