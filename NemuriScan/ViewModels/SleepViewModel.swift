@@ -14,6 +14,10 @@ class SleepViewModel: ObservableObject {
     @Published var selectedSession: SleepSession?
     @Published var showPaywall = false
 
+    let interstitialManager = InterstitialAdManager()
+    let rewardedManager = RewardedAdManager()
+
+    private let subscriptionManager = SubscriptionManager()
     private let recorder = AudioRecorder()
     private let snoreDetector = SnoreDetector()
     private let stageEstimator = SleepStageEstimator()
@@ -28,6 +32,23 @@ class SleepViewModel: ObservableObject {
     init() {
         loadSessions()
         setupRecorderCallbacks()
+    }
+
+    var isSubscribed: Bool { subscriptionManager.isSubscribed }
+
+    // MARK: - Ad helpers
+
+    func showInterstitialBeforeResult() {
+        guard !subscriptionManager.isSubscribed else { return }
+        interstitialManager.showIfReady()
+    }
+
+    func showRewardedForPDF(completion: @escaping (Bool) -> Void) {
+        guard !subscriptionManager.isSubscribed else {
+            completion(true)
+            return
+        }
+        rewardedManager.show(completion: completion)
     }
 
     // MARK: - Recording

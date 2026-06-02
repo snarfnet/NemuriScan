@@ -1,9 +1,12 @@
 import SwiftUI
+import UIKit
 
 struct ResultView: View {
     let session: SleepSession
     @EnvironmentObject private var viewModel: SleepViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showShareSheet = false
+    @State private var pdfData: Data?
     private let isJP = Locale.current.language.languageCode?.identifier == "ja"
 
     var body: some View {
@@ -142,15 +145,97 @@ struct ResultView: View {
                         }
                     }
                     .padding(.horizontal, 16)
+
+                    // PDF Report button
+                    Button {
+                        viewModel.showRewardedForPDF { rewarded in
+                            if rewarded {
+                                generateAndSharePDF()
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: viewModel.isSubscribed ? "doc.text.fill" : "play.circle.fill")
+                            Text(isJP ? "PDFレポート" : "PDF Report")
+                                .font(.system(size: 16, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.27, green: 0.27, blue: 0.78),
+                                    Color(red: 0.48, green: 0.62, blue: 0.88)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .foregroundColor(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .padding(.horizontal, 16)
                     .padding(.bottom, 32)
                 }
             }
         }
         .navigationTitle(isJP ? "睡眠レポート" : "Sleep Report")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            viewModel.showInterstitialBeforeResult()
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let data = pdfData {
+                ShareSheet(items: [data])
+            }
+        }
     }
 
     // MARK: - Helpers
+
+    private func generateAndSharePDF() {
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842))
+        let data = renderer.pdfData { ctx in
+            ctx.beginPage()
+            let title = isJP ? "ネムリスキャン 睡眠分析レポート" : "NemuriScan Sleep Analysis Report"
+            let titleAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 22),
+                .foregroundColor: UIColor.black
+            ]
+            title.draw(at: CGPoint(x: 40, y: 40), withAttributes: titleAttrs)
+
+            let bodyAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 13),
+                .foregroundColor: UIColor.darkGray
+            ]
+            var y: CGFloat = 80
+
+            func drawLine(_ text: String) {
+                text.draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttrs)
+                y += 22
+            }
+
+            let dateStr = session.startTime.formatted(date: .complete, time: .shortened)
+            drawLine(isJP ? "日付: \(dateStr)" : "Date: \(dateStr)")
+            drawLine(isJP ? "睡眠時間: \(session.durationString)" : "Duration: \(session.durationString)")
+            drawLine(isJP ? "睡眠スコア: \(session.overallScore)/100" : "Sleep Score: \(session.overallScore)/100")
+            drawLine(isJP ? "いびき回数: \(session.snoreEvents.count)" : "Snore Events: \(session.snoreEvents.count)")
+            drawLine(isJP ? "無呼吸リスク: \(session.apneaRisk.localizedName)" : "Apnea Risk: \(session.apneaRisk.localizedName)")
+            drawLine(isJP ? "推定AHI: \(String(format: "%.1f", session.ahiEstimate)) 回/時" : "Est. AHI: \(String(format: "%.1f", session.ahiEstimate))/hr")
+
+            y += 20
+            let disclaimer = isJP
+                ? "※このレポートは医療診断ではありません。症状が気になる場合は医師に相談してください。"
+                : "Disclaimer: This report is not a medical diagnosis. Consult a doctor if you have concerns."
+            let smallAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.italicSystemFont(ofSize: 10),
+                .foregroundColor: UIColor.gray
+            ]
+            disclaimer.draw(in: CGRect(x: 40, y: y, width: 515, height: 60), withAttributes: smallAttrs)
+        }
+        pdfData = data
+        showShareSheet = true
+    }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
