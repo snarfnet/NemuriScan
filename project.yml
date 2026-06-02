@@ -53,6 +53,9 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         NSMicrophoneUsageDescription: "睡眠中の呼吸音やいびきを分析するためにマイクを使用します。Sleep analysis requires microphone access to detect snoring and breathing patterns."
         NSHealthShareUsageDescription: "睡眠データをヘルスケアアプリと共有します。Share sleep data with the Health app."
         NSHealthUpdateUsageDescription: "睡眠データをヘルスケアアプリに記録します。Write sleep data to the Health app."
